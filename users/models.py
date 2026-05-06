@@ -3,7 +3,7 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
-    phone = models.PositiveIntegerField(max_length=15, unique=True)
+    phone = models.CharField(max_length=15, unique=True)
     avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg')
     is_active = models.BooleanField(default=True)
 
@@ -47,11 +47,23 @@ class Technician(CustomUser):
 class Admin(CustomUser):
     # Operator bilan Technicianni activate qilishi kerak ular ro`yxatdan o`tgandan keyin.
     # Bo`lmasa access berilmaydi programmaga.
-    operator = models.ForeignKey(Operator, on_delete=models.PROTECT)
-    technician = models.ForeignKey(Technician, on_delete=models.PROTECT)
+    class Admin(CustomUser):
 
-    class Meta:
-        db_table = 'admin'
+        managed_operators = models.ForeignKey(
+            Operator,
+            on_delete=models.PROTECT,
+            related_name='operators_approved_by_admin',
+            null=True, blank=True
+        )
+        managed_technicians = models.ForeignKey(
+            Technician,
+            on_delete=models.PROTECT,
+            related_name='technicians_approved_by_admin',
+            null=True, blank=True
+        )
 
-    def __str__(self):
-        return self.username
+        class Meta:
+            db_table = 'admin'
+
+        def __str__(self):
+            return self.username
