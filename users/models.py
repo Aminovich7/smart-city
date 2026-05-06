@@ -4,24 +4,54 @@ from django.db import models
 
 class CustomUser(AbstractUser):
     phone = models.PositiveIntegerField(max_length=15, unique=True)
-    role = models.CharField()
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'custom_user'
+
 
 
 class Citizen(CustomUser):
     address = models.CharField(max_length=255)
     feedback_count = models.PositiveIntegerField(default=0)
-    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg')
+
+    class Meta:
+        db_table = 'citizen'
+
+    def __str__(self):
+        return self.username
+
 
 
 class Operator(CustomUser):
     department = models.CharField(max_length=255)
     assigned_incidents_count= models.PositiveIntegerField(default=0)
 
+    class Meta:
+        db_table = 'operator'
+
+    def __str__(self):
+        return self.username
 
 class Technician(CustomUser):
     specialization = models.CharField(max_length=255)
     current_workload = models.PositiveIntegerField(default=0)
 
+    class Meta:
+        db_table = 'technician'
+
+    def __str__(self):
+        return self.username
 
 class Admin(CustomUser):
-    permissions = models.ManyToManyField(CustomUser, related_name='admin_user')
+    # Operator bilan Technicianni activate qilishi kerak ular ro`yxatdan o`tgandan keyin.
+    # Bo`lmasa access berilmaydi programmaga.
+    operator = models.ForeignKey(Operator, on_delete=models.PROTECT)
+    technician = models.ForeignKey(Technician, on_delete=models.PROTECT)
+
+    class Meta:
+        db_table = 'admin'
+
+    def __str__(self):
+        return self.username
