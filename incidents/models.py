@@ -1,7 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from users.models import Operator, Technician, Citizen, Admin
-
+import os
+from django.conf import settings
 
 class Category(models.Model):
 
@@ -352,7 +354,232 @@ class Incident(models.Model):
 
         self.save()
 
+## RASM TUSHIRISH LOGIKASIDA FOYDALANUVCHI BOSHQA LOKATSIYADAN TURIB RASM QOSHIB BOLMAYDIGAN QILISHNI OYLAB KOR.
 
+
+def incident_photo_path(instance, filename):
+    return os.path.join('incident_photos',
+                        f'incident_{instance.incident.id}',
+                        instance.upload_type,filename
+                        )
+
+class IncidentPhoto(models.Model):
+    UPLOAD_TYPE_CHOICES = [
+        ('initial', 'Initial report'),
+        ('completion', 'Completion report'),
+    ]
+
+    incident = models.ForeignKey(
+        Incident,
+        on_delete=models.CASCADE,
+        related_name='photos'
+    )
+
+    image = models.ImageField(upload_to=incident_photo_path)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,   # CustomUser
+        on_delete=models.PROTECT,
+        related_name='uploaded_photos'
+    )
+    upload_type = models.CharField(
+        max_length=20,
+        choices=UPLOAD_TYPE_CHOICES
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'incident_photo'
+        ordering = ['uploaded_at']
+
+    def clean(self):
+        super().clean()
+        user = self.uploaded_by
+        incident = self.incident
+        stage = self.upload_type
+
+        # ----------------------------------------------------------
+        # Determine user role (multi-table inheritance)
+        # ----------------------------------------------------------
+        is_citizen = hasattr(user, 'citizen')
+        is_operator = hasattr(user, 'operator')
+        is_technician = hasattr(user, 'technician')
+
+        # ----------------------------------------------------------
+        # Validations for INITIAL stage
+        # ----------------------------------------------------------
+        if stage == 'initial':
+            # Initial photos are only allowed when the incident is NEW
+            if incident.status != 'NEW':
+                raise ValidationError(
+                    'Initial photos can only be uploaded while the incident is NEW.'
+                )
+            if not (is_citizen or is_operator):
+                raise ValidationError(
+                    'Only the citizen or an operator can upload initial photos.'
+                )
+            # --- Citizen must upload exactly 3 initial photos, operator up to 2 ---
+            # Count photos already uploaded in this stage, per role
+            if is_citizen:
+                citizen_initial_count = incident.photos.filter(
+                    upload_type='initial',
+                    uploaded_by=user   # same citizen
+                ).count()
+                if citizen_initial_count >= 3:
+                    raise ValidationError('A citizen can upload at most 3 initial photos.')
+            elif is_operator:
+                operator_initial_count = incident.photos.filter(
+                    upload_type='initial',
+                    uploaded_by=user
+                ).count()
+                if operator_initial_count >= 2:
+                    raise ValidationError('An operator can upload at most 2 initial photos.')
+
+            # Optional: total initial photos per incident ≤ 5
+            total_initial = incident.photos.filter(upload_type='initial').count()
+            if total_initial >= 5:
+                raise ValidationError('Maximum 5 initial photos allowed per incident.')
+
+        # ----------------------------------------------------------
+        # Validations for COMPLETION stage
+        # ----------------------------------------------------------
+        elif stage == 'completion':
+            # No uploads allowed when CLOSED
+            if incident.status == 'CLOSED':
+                raise ValidationError('Cannot upload photos to a closed incident.')
+
+            if is_technician:
+                # Technician uploads only while incident is IN_PROGRESS
+                if incident.status != 'IN_PROGRESS':
+                    raise ValidationError('Technician can upload completion photos only while incident is IN_PROGRESS.')
+                count = incident.photos.filter(upload_type='completion', uploaded_by=user).count()
+                if count >= 3:
+                    raise ValidationError('Technician can upload at most 3 completion photos.')
+            elif is_operator:
+                # Operator can add photos only when incident is RESOLVED
+                if incident.status != 'RESOLVED':
+                    raise ValidationError(
+                        'Operator can upload additional completion photos only when incident is RESOLVED.')
+                count = incident.photos.filter(upload_type='completion', uploaded_by=user).count()
+                if count >= 2:
+                    raise ValidationError('Operator can upload at most 2 additional completion photos.')
+            else:
+                raise ValidationError('Only technician or operator can upload completion photos.')
+
+            total = incident.photos.filter(upload_type='completion').count()
+            if total >= 5:
+                raise ValidationError('Max 5 completion photos per incident.')
+
+        def save(self, *args, **kwargs):
+            self.full_clean()
+            super().save(*args, **kwargs)
+
+
+# -------------------------------------------------------------------
+# IncidentUpdate – status change history
+# -------------------------------------------------------------------
+class IncidentUpdate(models.Model):
+    incident = models.ForeignKey(
+        Incident,
+        on_delete=models.CASCADE,
+        related_name='updates'
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='incident_updates'
+    )
+    old_status = models.CharField(max_length=20, blank=True, null=True)
+    new_status = models.CharField(max_length=20)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'incident_update'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Update #{self.id} for Incident #{self.incident_id}"
+
+
+class Feedback(models.Model):
+    incident = models.ForeignKey(
+        Incident,
+        on_delete=models.CASCADE,
+        related_name='feedback'
+    )
+    citizen = models.ForeignKey(
+        'users.Citizen',
+        on_delete=models.PROTECT,
+        related_name='feedback_entries'
+    )
+    rating = models.PositiveSmallIntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text="Rating from 1 (worst) to 5 (best)"
+    )
+    is_resolved = models.BooleanField(
+        help_text="Citizen confirms if the incident was actually resolved"
+    )
+    reason = models.TextField(
+        blank=True,
+        help_text="If not resolved, the citizen must provide a reason"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'feedback'
+        ordering = ['-created_at']
+        unique_together = [['incident', 'citizen']]  # one feedback per incident per citizen
+
+    def __str__(self):
+        return f"Feedback for Incident #{self.incident_id} by {self.citizen.username}"
+
+    def clean(self):
+        super().clean()
+        # Reason is required if is_resolved is False
+        if not self.is_resolved and not self.reason.strip():
+            raise ValidationError({
+                'reason': 'You must provide a reason if the incident is not resolved.'
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        # Increment citizen's feedback count
+        if self._state.adding:  # only on creation
+            self.citizen.feedback_count = F('feedback_count') + 1
+            self.citizen.save(update_fields=['feedback_count'])
+        super().save(*args, **kwargs)
+
+
+class ResolutionReport(models.Model):
+    incident = models.OneToOneField(
+        Incident,
+        on_delete=models.CASCADE,
+        related_name='resolution_report'
+    )
+    technician = models.ForeignKey(
+        'users.Technician',
+        on_delete=models.PROTECT,
+        related_name='resolved_incidents'
+    )
+    description = models.TextField(
+        help_text="Detailed description of how the incident was resolved"
+    )
+    materials_used = models.TextField(
+        blank=True,
+        help_text="Optional: list of materials or equipment used"
+    )
+    completed_at = models.DateTimeField(
+        default=timezone.now,
+        help_text="When the work was actually completed"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'resolution_report'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Resolution Report for Incident #{self.incident_id}"
 
 
 
