@@ -47,23 +47,21 @@ class Technician(CustomUser):
 class Admin(CustomUser):
     # Operator bilan Technicianni activate qilishi kerak ular ro`yxatdan o`tgandan keyin.
     # Bo`lmasa access berilmaydi programmaga.
-    class Admin(CustomUser):
+    managed_operators = models.ForeignKey(
+        Operator,
+        on_delete=models.PROTECT,
+        related_name='operators_approved_by_admin',
+        null=True, blank=True
+    )
+    managed_technicians = models.ForeignKey(
+        Technician,
+        on_delete=models.PROTECT,
+        related_name='technicians_approved_by_admin',
+        null=True, blank=True
+    )
 
-        managed_operators = models.ForeignKey(
-            Operator,
-            on_delete=models.PROTECT,
-            related_name='operators_approved_by_admin',
-            null=True, blank=True
-        )
-        managed_technicians = models.ForeignKey(
-            Technician,
-            on_delete=models.PROTECT,
-            related_name='technicians_approved_by_admin',
-            null=True, blank=True
-        )
+    class Meta:
+        db_table = 'admin'
 
-        class Meta:
-            db_table = 'admin'
-
-        def __str__(self):
-            return self.username
+    def __str__(self):
+        return self.username

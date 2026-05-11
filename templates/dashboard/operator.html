@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Operator Paneli</title>
+</head>
+<body>
+
+    <h2>Operator: {{ operator.username }}</h2>
+    
+    <table border="1">
+        <tr>
+            <th>Rasm</th>
+            <td><img src="{{ operator.avatar.url }}" width="100"></td>
+        </tr>
+        <tr>
+            <th>Bo'lim</th>
+            <td>{{ department }}</td>
+        </tr>
+        <tr>
+            <th>Telefon</th>
+            <td>{{ operator.phone }}</td>
+        </tr>
+        <tr>
+            <th>Vazifalar soni</th>
+            <td>{{ incidents_count }} ta</td>
+        </tr>
+    </table>
+
+    <br>
+
+    <!-- Amallar (Tugmalar) -->
+    <div>
+        <form action="{% url 'assign_task_to_me' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Yangi vazifa olish (+1)</button>
+        </form>
+
+        <form action="{% url 'complete_task' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Vazifani yakunlash (-1)</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <ul>
+        <li><a href="{% url 'department_colleagues' %}">Hamkasblarni ko'rish</a></li>
+        <li><a href="/logout/">Chiqish</a></li>
+    </ul>
+
+</body>
+</html>
