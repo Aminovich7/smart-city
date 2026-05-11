@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell">
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Kutish holati</p>
+        <h1>Hisobingiz tasdiqlanmagan</h1>
+        <p>Sizning {{ request.user.get_role_display }} hisobingiz hali admin tomonidan tasdiqlanmagan. Tasdiqlangandan so'ng tizimdan to'liq foydalana olasiz.</p>
+        <form method="post" action="{% url 'users:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost">Chiqish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

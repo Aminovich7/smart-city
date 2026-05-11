@@ -1,48 +1,16 @@
+from datetime import timedelta
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from users.models import Operator, Technician, Citizen, Admin
-import os
-from django.conf import settings
+from users.models import CustomUser
 
-class Category(models.Model):
 
-    PRIORITY_CHOICES= [
-        ('low', 'Past'),
-        ('medium', 'O`rta'),
-        ('high', 'Yuqori'),
-    ]
-
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    priority_level = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
-
-    class Meta:
-        db_table = 'incidents_category'
-        ordering = ['name']
-        indexes = [
-            models.Index(fields=['priority_level']),
-        ]
-
-    def __str__(self):
-        return self.name
-
+def incident_photo_path(instance, filename):
+    return f'incident_photos/incident_{instance.incident_id}/{instance.kind}/{filename}'
 
 
 class Incident(models.Model):
-    STATUS_CHOICES = [
-        ('NEW', 'Yangi'),
-        ('IN_PROGRESS', 'Jarayonda'),
-        ('RESOLVED', 'Tugallangan'),
-        ('CLOSED', 'Yopilgan'),
-    ]
-
-    PRIORITY_CHOICES = [
-        ('low', 'Past'),
-        ('medium', "O`rta"),
-        ('high', 'Yuqori'),
-    ]
-
     UZBEKISTAN_GEOGRAPHY_CHOICES = [
         ('Tashkent City', (
             ('toshkent_city_bektemir', 'Bektemir tumani'),
@@ -57,6 +25,23 @@ class Incident(models.Model):
             ('toshkent_city_yashnobod', 'Yashnobod tumani'),
             ('toshkent_city_yunusobod', 'Yunusobod tumani'),
             ('toshkent_city_yangihayot', 'Yangihayot tumani'),
+        )),
+        ('Qashqadaryo', (
+            ('qarshi_city', 'Qarshi shahri'),
+            ('shaxrisabz_city', 'Shahrisabz shahri'),
+            ('chiroqchi', 'Chiroqchi tumani'),
+            ('dehqonobod', 'Dehqonobod tumani'),
+            ('kamashi', 'Kamashi tumani'),
+            ('kasbi', 'Kasbi tumani'),
+            ('kitob', 'Kitob tumani'),
+            ('koson', 'Koson tumani'),
+            ('mirishkor', 'Mirishkor tumani'),
+            ('muborak', 'Muborak tumani'),
+            ('nishon', 'Nishon tumani'),
+            ('qarshi_tuman', 'Qarshi tumani'),
+            ('shaxrisabz_tuman', 'Shahrisabz tumani'),
+            ('yakkabog', 'Yakkabogʻ tumani'),
+            ('guzor', 'Gʻuzor tumani'),
         )),
         ('Andijon', (
             ('andijon_city', 'Andijon shahri'),
@@ -148,23 +133,6 @@ class Incident(models.Model):
             ('tomdi', 'Tomdi tumani'),
             ('uchquduq', 'Uchquduq tumani'),
             ('xatirchi', 'Xatirchi tumani'),
-        )),
-        ('Qashqadaryo', (
-            ('qarshi_city', 'Qarshi shahri'),
-            ('shaxrisabz_city', 'Shahrisabz shahri'),
-            ('chiroqchi', 'Chiroqchi tumani'),
-            ('dehqonobod', 'Dehqonobod tumani'),
-            ('kamashi', 'Kamashi tumani'),
-            ('kasbi', 'Kasbi tumani'),
-            ('kitob', 'Kitob tumani'),
-            ('koson', 'Koson tumani'),
-            ('mirishkor', 'Mirishkor tumani'),
-            ('muborak', 'Muborak tumani'),
-            ('nishon', 'Nishon tumani'),
-            ('qarshi_tuman', 'Qarshi tumani'),
-            ('shaxrisabz_tuman', 'Shahrisabz tumani'),
-            ('yakkabog', 'Yakkabogʻ tumani'),
-            ('guzor', 'Gʻuzor tumani'),
         )),
         ('Samarqand', (
             ('samarqand_city', 'Samarqand shahri'),
@@ -265,321 +233,314 @@ class Incident(models.Model):
         )),
     ]
 
-    citizen = models.ForeignKey(
-        Citizen,
+    class Status(models.TextChoices):
+        NEW = 'NEW', 'Yangi'
+        IN_PROGRESS = 'IN_PROGRESS', 'Jarayonda'
+        RESOLVED = 'RESOLVED', 'Hal qilindi'
+        CLOSED = 'CLOSED', 'Yopildi'
+
+    class Category(models.TextChoices):
+        SANITATION = 'sanitation', 'Tozalik va chiqindi'
+        ELECTRICITY = 'electricity', 'Elektr tarmoqlari'
+        WATER = 'water', 'Suv ta`minoti va quvurlar'
+        LIGHTING = 'lighting', 'Ko`cha yoritish'
+        ROAD = 'road', 'Yo`l va trotuar'
+        DRAINAGE = 'drainage', 'Kanalizatsiya va drenaj'
+        LANDSCAPING = 'landscaping', 'Ko`kalamzorlashtirish va daraxtlar'
+        SIGNAL = 'signal', 'Svetofor va xavfsizlik belgilari'
+        OTHER = 'other', 'Boshqa'
+
+    CATEGORY_TECHNICIAN_MAP = {
+        Category.SANITATION: CustomUser.Specialization.CLEANER,
+        Category.ELECTRICITY: CustomUser.Specialization.ELECTRICIAN,
+        Category.WATER: CustomUser.Specialization.PLUMBER,
+        Category.LIGHTING: CustomUser.Specialization.LIGHTING_TECH,
+        Category.ROAD: CustomUser.Specialization.ROAD_WORKER,
+        Category.DRAINAGE: CustomUser.Specialization.DRAINAGE_TECH,
+        Category.LANDSCAPING: CustomUser.Specialization.LANDSCAPER,
+        Category.SIGNAL: CustomUser.Specialization.SIGNAL_TECH,
+        Category.OTHER: CustomUser.Specialization.MULTI_SKILLED,
+    }
+
+    class Priority(models.TextChoices):
+        LOW = 'low', 'Past'
+        MEDIUM = 'medium', 'O`rta'
+        HIGH = 'high', 'Yuqori'
+
+
+
+    citizen = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='citizen_incidents')
+    operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='incidents',
-        help_text="Citizen who reported the incident"
+        related_name='operator_incidents',
+        blank=True,
+        null=True,
     )
-    category = models.ForeignKey(
-        Category,
+    technician = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='incidents',
-    )
-    location_area = models.CharField(
-        max_length=50,
-        choices=UZBEKISTAN_GEOGRAPHY_CHOICES,
-        verbose_name="Region/District"
+        related_name='technician_incidents',
+        blank=True,
+        null=True,
     )
     title = models.CharField(max_length=200)
     description = models.TextField()
-    street = models.CharField(help_text="Ko`cha nomi")
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
-    operator = models.ForeignKey(
-        Operator,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='assigned_incidents',
-        help_text="Operator responsible for this incident"
-    )
-    technician = models.ForeignKey(
-        Technician,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='assigned_incidents',
-        help_text="Technician assigned to resolve this incident"
-    )
-
+    category = models.CharField(max_length=32, choices=Category.choices)
+    other_category_note = models.CharField(max_length=255, blank=True)
+    priority = models.CharField(max_length=16, choices=Priority.choices, default=Priority.MEDIUM)
+    region = models.CharField(max_length=100, choices=UZBEKISTAN_GEOGRAPHY_CHOICES)
+    address = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    workflow_round = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
-    closed_at = models.DateTimeField(null=True, blank=True)
-
+    assigned_at = models.DateTimeField(blank=True, null=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    closed_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'incident'
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['status']),
-            models.Index(fields=['category']),
-            models.Index(fields=['priority']),
-            models.Index(fields=['status', 'priority']),
-        ]
-
 
     def __str__(self):
-        return f"Incident #{self.id}: {self.title}"
+        return f'#{self.pk} {self.title}'
 
+    @property
+    def preferred_specialization(self):
+        return self.CATEGORY_TECHNICIAN_MAP[self.category]
 
-    def mark_resolved(self):
-        """Mark incident as resolved"""
-        self.status = 'RESOLVED'
-        self.resolved_at = timezone.now()
-        self.save()
+    @property
+    def matching_specializations(self):
+        preferred = self.preferred_specialization
+        return [preferred, CustomUser.Specialization.MULTI_SKILLED]
 
+    def clean(self):
+        super().clean()
+        if self.citizen_id and self.citizen.role != CustomUser.Role.CITIZEN:
+            raise ValidationError({'citizen': "Incident egasi fuqaro bo'lishi kerak."})
+        if self.operator_id and self.operator.role != CustomUser.Role.OPERATOR:
+            raise ValidationError({'operator': "Biriktiruvchi foydalanuvchi operator bo'lishi kerak."})
+        if self.technician_id and self.technician.role != CustomUser.Role.TECHNICIAN:
+            raise ValidationError({'technician': "Ijrochi texnik bo'lishi kerak."})
+        if self.category == self.Category.OTHER and not self.other_category_note.strip():
+            raise ValidationError({'other_category_note': "`Boshqa` tanlanganda izoh yozish majburiy."})
+        if self.category != self.Category.OTHER:
+            self.other_category_note = ''
 
-    def mark_closed(self):
-        """Mark incident as closed"""
-        self.status = 'CLOSED'
-        self.closed_at = timezone.now()
-        self.save()
+    def add_update(self, *, actor=None, from_status=None, to_status=None, note=''):
+        IncidentUpdate.objects.create(
+            incident=self,
+            actor=actor,
+            from_status=from_status or self.status,
+            to_status=to_status or self.status,
+            note=note,
+        )
 
+    def can_reopen(self):
+        feedback = getattr(self, 'feedback_entry', None)
+        return self.status == self.Status.RESOLVED and feedback is not None and not feedback.is_resolved
 
-    def assign_operator(self, operator):
-        """Assign operator to incident"""
+    def assign_technician(self, *, operator, technician, note=''):
+        if operator.role != CustomUser.Role.OPERATOR:
+            raise ValidationError("Incidentni faqat operator biriktira oladi.")
+        if technician.role != CustomUser.Role.TECHNICIAN:
+            raise ValidationError("Tanlangan foydalanuvchi texnik emas.")
+        if technician.specialization not in self.matching_specializations:
+            raise ValidationError("Tanlangan texnik incident kategoriyasiga mos emas.")
+
+        if self.status == self.Status.NEW:
+            self.workflow_round = max(self.workflow_round, 1)
+            action_note = note or "Yangi incident texnikka biriktirildi."
+        elif self.can_reopen():
+            self.workflow_round += 1
+            self.resolved_at = None
+            action_note = note or "Fuqaro rad etgan incident qayta ishga tushirildi."
+        else:
+            raise ValidationError("Bu incidentni hozir texnikka biriktirib bo'lmaydi.")
+
+        previous_status = self.status
         self.operator = operator
-        self.save()
-
-
-    def assign_technician(self, technician):
-        """Assign technician to incident"""
         self.technician = technician
-        if technician:
-            technician.current_workload += 1
-            technician.save()
-            self.status = 'IN_PROGRESS'
+        self.status = self.Status.IN_PROGRESS
+        self.assigned_at = timezone.now()
+        self.closed_at = None
+        self.save(
+            update_fields=[
+                'operator',
+                'technician',
+                'status',
+                'assigned_at',
+                'resolved_at',
+                'closed_at',
+                'workflow_round',
+                'updated_at',
+            ]
+        )
+        technician.current_workload += 1
+        technician.save(update_fields=['current_workload'])
+        self.add_update(actor=operator, from_status=previous_status, to_status=self.Status.IN_PROGRESS, note=action_note)
 
-        self.save()
+    def mark_resolved(self, *, technician, note=''):
+        if self.status != self.Status.IN_PROGRESS:
+            raise ValidationError("Faqat jarayondagi incident hal qilinishi mumkin.")
+        if self.technician_id != technician.id:
+            raise ValidationError("Bu incident sizga biriktirilmagan.")
+        previous_status = self.status
+        self.status = self.Status.RESOLVED
+        self.resolved_at = timezone.now()
+        self.save(update_fields=['status', 'resolved_at', 'updated_at'])
+        if technician.current_workload > 0:
+            technician.current_workload -= 1
+            technician.save(update_fields=['current_workload'])
+        self.add_update(
+            actor=technician,
+            from_status=previous_status,
+            to_status=self.Status.RESOLVED,
+            note=note or "Texnik yechim hisobotini yubordi.",
+        )
 
-## RASM TUSHIRISH LOGIKASIDA FOYDALANUVCHI BOSHQA LOKATSIYADAN TURIB RASM QOSHIB BOLMAYDIGAN QILISHNI OYLAB KOR.
+    def mark_closed(self, *, actor=None, note=''):
+        if self.status != self.Status.RESOLVED:
+            raise ValidationError("Faqat hal qilingan incident yopilishi mumkin.")
+        previous_status = self.status
+        self.status = self.Status.CLOSED
+        self.closed_at = timezone.now()
+        self.save(update_fields=['status', 'closed_at', 'updated_at'])
+        self.add_update(
+            actor=actor,
+            from_status=previous_status,
+            to_status=self.Status.CLOSED,
+            note=note or "Incident yopildi.",
+        )
 
+    def close_if_overdue(self, *, now=None):
+        now = now or timezone.now()
+        if self.status != self.Status.RESOLVED or not self.resolved_at:
+            return False
+        if hasattr(self, 'feedback_entry'):
+            return False
+        if self.resolved_at + timedelta(days=7) > now:
+            return False
+        self.mark_closed(actor=None, note="7 kun ichida fikr bildirilmagani uchun tizim avtomatik yopdi.")
+        return True
 
-def incident_photo_path(instance, filename):
-    return os.path.join('incident_photos',
-                        f'incident_{instance.incident.id}',
-                        instance.upload_type,filename
-                        )
 
 class IncidentPhoto(models.Model):
-    UPLOAD_TYPE_CHOICES = [
-        ('initial', 'Initial report'),
-        ('completion', 'Completion report'),
-    ]
+    class Kind(models.TextChoices):
+        INITIAL = 'initial', 'Boshlang`ich foto'
+        TECHNICIAN_COMPLETION = 'technician_completion', 'Texnik yakuniy foto'
+        OPERATOR_COMPLETION = 'operator_completion', 'Operator qo`shimcha foto'
 
-    incident = models.ForeignKey(
-        Incident,
-        on_delete=models.CASCADE,
-        related_name='photos'
-    )
-
-    image = models.ImageField(upload_to=incident_photo_path)
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,   # CustomUser
-        on_delete=models.PROTECT,
-        related_name='uploaded_photos'
-    )
-    upload_type = models.CharField(
-        max_length=20,
-        choices=UPLOAD_TYPE_CHOICES
-    )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'incident_photo'
-        ordering = ['uploaded_at']
-
-    def clean(self):
-        super().clean()
-        user = self.uploaded_by
-        incident = self.incident
-        stage = self.upload_type
-
-        # ----------------------------------------------------------
-        # Determine user role (multi-table inheritance)
-        # ----------------------------------------------------------
-        is_citizen = hasattr(user, 'citizen')
-        is_operator = hasattr(user, 'operator')
-        is_technician = hasattr(user, 'technician')
-
-        # ----------------------------------------------------------
-        # Validations for INITIAL stage
-        # ----------------------------------------------------------
-        if stage == 'initial':
-            # Initial photos are only allowed when the incident is NEW
-            if incident.status != 'NEW':
-                raise ValidationError(
-                    'Initial photos can only be uploaded while the incident is NEW.'
-                )
-            if not (is_citizen or is_operator):
-                raise ValidationError(
-                    'Only the citizen or an operator can upload initial photos.'
-                )
-            # --- Citizen must upload exactly 3 initial photos, operator up to 2 ---
-            # Count photos already uploaded in this stage, per role
-            if is_citizen:
-                citizen_initial_count = incident.photos.filter(
-                    upload_type='initial',
-                    uploaded_by=user   # same citizen
-                ).count()
-                if citizen_initial_count >= 3:
-                    raise ValidationError('A citizen can upload at most 3 initial photos.')
-            elif is_operator:
-                operator_initial_count = incident.photos.filter(
-                    upload_type='initial',
-                    uploaded_by=user
-                ).count()
-                if operator_initial_count >= 2:
-                    raise ValidationError('An operator can upload at most 2 initial photos.')
-
-            # Optional: total initial photos per incident ≤ 5
-            total_initial = incident.photos.filter(upload_type='initial').count()
-            if total_initial >= 5:
-                raise ValidationError('Maximum 5 initial photos allowed per incident.')
-
-        # ----------------------------------------------------------
-        # Validations for COMPLETION stage
-        # ----------------------------------------------------------
-        elif stage == 'completion':
-            # No uploads allowed when CLOSED
-            if incident.status == 'CLOSED':
-                raise ValidationError('Cannot upload photos to a closed incident.')
-
-            if is_technician:
-                # Technician uploads only while incident is IN_PROGRESS
-                if incident.status != 'IN_PROGRESS':
-                    raise ValidationError('Technician can upload completion photos only while incident is IN_PROGRESS.')
-                count = incident.photos.filter(upload_type='completion', uploaded_by=user).count()
-                if count >= 3:
-                    raise ValidationError('Technician can upload at most 3 completion photos.')
-            elif is_operator:
-                # Operator can add photos only when incident is RESOLVED
-                if incident.status != 'RESOLVED':
-                    raise ValidationError(
-                        'Operator can upload additional completion photos only when incident is RESOLVED.')
-                count = incident.photos.filter(upload_type='completion', uploaded_by=user).count()
-                if count >= 2:
-                    raise ValidationError('Operator can upload at most 2 additional completion photos.')
-            else:
-                raise ValidationError('Only technician or operator can upload completion photos.')
-
-            total = incident.photos.filter(upload_type='completion').count()
-            if total >= 5:
-                raise ValidationError('Max 5 completion photos per incident.')
-
-        def save(self, *args, **kwargs):
-            self.full_clean()
-            super().save(*args, **kwargs)
-
-
-# -------------------------------------------------------------------
-# IncidentUpdate – status change history
-# -------------------------------------------------------------------
-class IncidentUpdate(models.Model):
-    incident = models.ForeignKey(
-        Incident,
-        on_delete=models.CASCADE,
-        related_name='updates'
-    )
-    updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='incident_updates'
-    )
-    old_status = models.CharField(max_length=20, blank=True, null=True)
-    new_status = models.CharField(max_length=20)
-    notes = models.TextField(blank=True)
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='photos')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='incident_photos')
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+    round_number = models.PositiveIntegerField(default=0)
+    image = models.FileField(upload_to=incident_photo_path)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'incident_update'
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Update #{self.id} for Incident #{self.incident_id}"
-
-
-class Feedback(models.Model):
-    incident = models.ForeignKey(
-        Incident,
-        on_delete=models.CASCADE,
-        related_name='feedback'
-    )
-    citizen = models.ForeignKey(
-        'users.Citizen',
-        on_delete=models.PROTECT,
-        related_name='feedback_entries'
-    )
-    rating = models.PositiveSmallIntegerField(
-        choices=[(i, str(i)) for i in range(1, 6)],
-        help_text="Rating from 1 (worst) to 5 (best)"
-    )
-    is_resolved = models.BooleanField(
-        help_text="Citizen confirms if the incident was actually resolved"
-    )
-    reason = models.TextField(
-        blank=True,
-        help_text="If not resolved, the citizen must provide a reason"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'feedback'
-        ordering = ['-created_at']
-        unique_together = [['incident', 'citizen']]  # one feedback per incident per citizen
-
-    def __str__(self):
-        return f"Feedback for Incident #{self.incident_id} by {self.citizen.username}"
+        ordering = ['created_at']
 
     def clean(self):
         super().clean()
-        # Reason is required if is_resolved is False
-        if not self.is_resolved and not self.reason.strip():
-            raise ValidationError({
-                'reason': 'You must provide a reason if the incident is not resolved.'
-            })
+        count = IncidentPhoto.objects.filter(
+            incident=self.incident,
+            kind=self.kind,
+            round_number=self.round_number,
+        ).exclude(pk=self.pk).count()
+        if self.kind == self.Kind.INITIAL:
+            if self.incident.status != Incident.Status.NEW:
+                raise ValidationError("Boshlang`ich fotolar faqat yangi incident uchun yuklanadi.")
+            if self.uploaded_by_id != self.incident.citizen_id:
+                raise ValidationError("Boshlang`ich fotoni faqat incident egasi yuklaydi.")
+            if self.round_number != 0:
+                raise ValidationError("Boshlang`ich foto round 0 ga tegishli bo`lishi kerak.")
+            if count >= 3:
+                raise ValidationError("Fuqaro aynan 3 ta boshlang`ich foto yuklashi kerak.")
+        elif self.kind == self.Kind.TECHNICIAN_COMPLETION:
+            if self.incident.status != Incident.Status.IN_PROGRESS:
+                raise ValidationError("Yakuniy texnik fotolar faqat jarayondagi incident uchun yuklanadi.")
+            if self.incident.technician_id != self.uploaded_by_id:
+                raise ValidationError("Bu fotolarni faqat biriktirilgan texnik yuklay oladi.")
+            if self.round_number != self.incident.workflow_round:
+                raise ValidationError("Texnik fotosi joriy workflow sikliga mos emas.")
+            if count >= 3:
+                raise ValidationError("Texnik aynan 3 ta yakuniy foto yuklay oladi.")
+        elif self.kind == self.Kind.OPERATOR_COMPLETION:
+            if self.incident.status != Incident.Status.RESOLVED:
+                raise ValidationError("Operator qo`shimcha fotolarni faqat hal qilingan incidentga yuklaydi.")
+            if self.uploaded_by.role != CustomUser.Role.OPERATOR:
+                raise ValidationError("Qo`shimcha fotolarni faqat operator yuklay oladi.")
+            if self.round_number != self.incident.workflow_round:
+                raise ValidationError("Operator fotosi joriy workflow sikliga mos emas.")
+            if count >= 2:
+                raise ValidationError("Operator ko`pi bilan 2 ta qo`shimcha foto yuklay oladi.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        # Increment citizen's feedback count
-        if self._state.adding:  # only on creation
-            self.citizen.feedback_count = F('feedback_count') + 1
-            self.citizen.save(update_fields=['feedback_count'])
         super().save(*args, **kwargs)
 
 
 class ResolutionReport(models.Model):
-    incident = models.OneToOneField(
-        Incident,
-        on_delete=models.CASCADE,
-        related_name='resolution_report'
-    )
-    technician = models.ForeignKey(
-        'users.Technician',
-        on_delete=models.PROTECT,
-        related_name='resolved_incidents'
-    )
-    description = models.TextField(
-        help_text="Detailed description of how the incident was resolved"
-    )
-    materials_used = models.TextField(
-        blank=True,
-        help_text="Optional: list of materials or equipment used"
-    )
-    completed_at = models.DateTimeField(
-        default=timezone.now,
-        help_text="When the work was actually completed"
-    )
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='resolution_reports')
+    technician = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='resolution_reports')
+    round_number = models.PositiveIntegerField(default=1)
+    description = models.TextField()
+    materials_used = models.TextField(blank=True)
+    completed_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'resolution_report'
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['incident', 'round_number'], name='unique_resolution_report_per_round'),
+        ]
+
+    def clean(self):
+        super().clean()
+        if not self.technician_id or not self.incident_id:
+            return
+        if self.technician.role != CustomUser.Role.TECHNICIAN:
+            raise ValidationError({'technician': "Hisobotni faqat texnik yuboradi."})
+        if self.round_number != self.incident.workflow_round:
+            raise ValidationError({'round_number': "Hisobot joriy workflow sikliga tegishli bo`lishi kerak."})
+
+
+class CitizenFeedback(models.Model):
+    incident = models.OneToOneField(Incident, on_delete=models.CASCADE, related_name='feedback_entry')
+    citizen = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='incident_feedbacks')
+    is_resolved = models.BooleanField()
+    reason = models.TextField(blank=True)
+    rating = models.PositiveSmallIntegerField(blank=True, null=True, choices=[(i, str(i)) for i in range(1, 6)])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
         ordering = ['-created_at']
 
-    def __str__(self):
-        return f"Resolution Report for Incident #{self.incident_id}"
+    def clean(self):
+        super().clean()
+        if self.citizen.role != CustomUser.Role.CITIZEN:
+            raise ValidationError({'citizen': "Fikrni faqat fuqaro qoldira oladi."})
+        if self.incident.citizen_id != self.citizen_id:
+            raise ValidationError("Faqat incident egasi fikr qoldira oladi.")
+        if self.incident.status != Incident.Status.RESOLVED:
+            raise ValidationError("Fikr faqat hal qilingan incident uchun qabul qilinadi.")
+        if not self.is_resolved and not self.reason.strip():
+            raise ValidationError({'reason': "Muammo hal bo'lmagan bo'lsa, sabab yozilishi shart."})
 
 
+class IncidentUpdate(models.Model):
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='updates')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='incident_updates', blank=True, null=True)
+    from_status = models.CharField(max_length=20, blank=True)
+    to_status = models.CharField(max_length=20)
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['created_at']
+
+    def actor_name(self):
+        if not self.actor:
+            return 'Tizim'
+        return self.actor.get_full_name() or self.actor.username

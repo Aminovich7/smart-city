@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Ro'yxatdan o'tish</p>
+        <h1>Rolingizni tanlang</h1>
+        <p>Har bir rol uchun alohida interface va workflow mavjud. Kerakli ish turiga mos rol bilan davom eting.</p>
+    </div>
+</section>
+
+<section class="feature-grid role-feature-grid">
+    <a class="feature-card role-feature-card" href="{% url 'users:register_citizen' %}">
+        <span class="feature-index">01</span>
+        <h2>Fuqaro</h2>
+        <p>Muammo yuborish, statuslarni kuzatish va yakunda feedback qoldirish uchun.</p>
+    </a>
+    <a class="feature-card role-feature-card" href="{% url 'users:register_operator' %}">
+        <span class="feature-index">02</span>
+        <h2>Operator</h2>
+        <p>Incidentlarni taqsimlash, mos texniklarni tanlash va jarayonni nazorat qilish uchun.</p>
+    </a>
+    <a class="feature-card role-feature-card" href="{% url 'users:register_technician' %}">
+        <span class="feature-index">03</span>
+        <h2>Texnik</h2>
+        <p>Biriktirilgan ishlarni bajarish, foto va yechim hisobotini topshirish uchun.</p>
+    </a>
+    <a class="feature-card role-feature-card" href="{% url 'users:register_admin' %}">
+        <span class="feature-index">04</span>
+        <h2>Admin</h2>
+        <p>Tizim bo'yicha umumiy ko'rsatkichlar va boshqaruv nazorati uchun.</p>
+    </a>
+</section>
+{% endblock %}

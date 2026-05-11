@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell form-shell">
+    <div class="auth-side">
+        <p class="eyebrow">Operator amali</p>
+        <h1>#{{ incident.id }} uchun texnik tanlash</h1>
+        <p>Joriy status: <strong>{{ incident.get_status_display }}</strong>. Tanlangan texnik incidentni `IN_PROGRESS` holatiga olib o'tadi.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>Incident</strong><span>{{ incident.title }}</span></div>
+            <div class="auth-point"><strong>Hudud</strong><span>{{ incident.address }}</span></div>
+            <div class="auth-point"><strong>Status</strong><span>{{ incident.get_status_display }}</span></div>
+        </div>
+        <div class="matching-box">
+            <strong>Mos mutaxassisliklar</strong>
+            <p>{{ matching_specializations|join:", " }}</p>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Biriktirish</p>
+        <h2>Mos texnikni belgilang</h2>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">Texnikni biriktirish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

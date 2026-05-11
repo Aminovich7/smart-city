@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Admin hisobotlari</p>
+        <h1>Barcha incidentlar</h1>
+        <p>Operator panelidagidek filtrlash bilan umumiy monitoring ro'yxati.</p>
+    </div>
+</section>
+
+<section class="card table-card elevated-card">
+    <div class="table-header">
+        <div>
+            <p class="table-kicker">Admin monitoring</p>
+            <h2>Incidentlar ro'yxati</h2>
+        </div>
+        <div class="table-actions">
+            <form method="get" class="filter-bar">
+                <div class="field-inline">
+                    <label>Priority</label>
+                    <select name="priority">
+                        <option value="">Barchasi</option>
+                        {% for val,label in priority_choices %}
+                            <option value="{{ val }}" {% if current_filters.priority == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-inline">
+                    <label>Biriktirilgan</label>
+                    <select name="assigned">
+                        <option value="" {% if not current_filters.assigned %}selected{% endif %}>Barchasi</option>
+                        <option value="yes" {% if current_filters.assigned == 'yes' %}selected{% endif %}>Ha</option>
+                        <option value="no" {% if current_filters.assigned == 'no' %}selected{% endif %}>Yo'q</option>
+                    </select>
+                </div>
+                <div class="field-inline">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="">Barchasi</option>
+                        {% for val,label in status_choices %}
+                            <option value="{{ val }}" {% if current_filters.status == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-inline">
+                    <button type="submit" class="btn btn-secondary">Filtrlash</button>
+                    <a class="btn btn-ghost" href="{% url 'reports:admin_system_reports' %}">Tozalash</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Sarlavha</th>
+                    <th>Fuqaro</th>
+                    <th>Status</th>
+                    <th>Texnik</th>
+                    <th>Yaratilgan</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                    <tr>
+                        <td>#{{ incident.id }}</td>
+                        <td>
+                            <div class="table-title">{{ incident.title }}</div>
+                            <small>{{ incident.address }}</small>
+                        </td>
+                        <td>{{ incident.citizen }}</td>
+                        <td><span class="badge badge-{{ incident.status|lower }}">{{ incident.get_status_display }}</span></td>
+                        <td>{% if incident.technician %}{{ incident.technician }}{% else %}Yo'q{% endif %}</td>
+                        <td>{{ incident.created_at|date:"d.m.Y H:i" }}</td>
+                        <td><a class="inline-link" href="{% url 'incidents:incident_detail' incident.pk %}">Ko'rish</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state"><strong>Incident topilmadi.</strong><p>Filtr shartlarini o'zgartirib qayta tekshiring.</p></div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?page=1{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned %}&assigned={{ current_filters.assigned }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.previous_page_number }}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned %}&assigned={{ current_filters.assigned }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Sahifa <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.next_page_number }}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned %}&assigned={{ current_filters.assigned }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned %}&assigned={{ current_filters.assigned }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

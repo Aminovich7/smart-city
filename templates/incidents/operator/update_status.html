@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Update Status for Incident #{{ incident.id }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="id_status">New Status:</label>
+        {{ form.status }}
+    </div>
+    <button type="submit" class="btn">Update</button>
+</form>
+{% endblock %}

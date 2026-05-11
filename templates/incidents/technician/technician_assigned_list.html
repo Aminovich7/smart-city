@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Texnik paneli</p>
+        <h1>Menga biriktirilgan ishlar</h1>
+        <p>Faol topshiriqlar, yakunlangan ishlanmalar va yopilgan incidentlar bo'yicha ish holatingiz.</p>
+    </div>
+    <div class="page-hero-actions">
+        <div class="stat-inline">
+            <span>Faol ishlar</span>
+            <strong>{% if page_obj %}{{ page_obj.paginator.count }}{% else %}0{% endif %}</strong>
+        </div>
+        <div class="stat-inline">
+            <span>Yopilganlar</span>
+            <strong>{% if closed_page_obj %}{{ closed_page_obj.paginator.count }}{% else %}0{% endif %}</strong>
+        </div>
+    </div>
+</section>
+
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?page=1{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.previous_page_number }}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Faol sahifa <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.next_page_number }}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<section class="card table-card elevated-card">
+    <div class="table-header">
+        <div>
+            <p class="table-kicker">Joriy topshiriqlar</p>
+            <h2>Faol incidentlar</h2>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Sarlavha</th>
+                    <th>Status</th>
+                    <th>Manzil</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for incident in active_incidents %}
+                    <tr>
+                        <td>#{{ incident.id }}</td>
+                        <td><div class="table-title">{{ incident.title }}</div></td>
+                        <td><span class="badge badge-{{ incident.status|lower }}">{{ incident.get_status_display }}</span></td>
+                        <td>{{ incident.address }}</td>
+                        <td class="action-cell">
+                            <a class="inline-link" href="{% url 'incidents:incident_detail' incident.pk %}">Batafsil</a>
+                            <a class="inline-link strong-link" href="{% url 'incidents:resolve_incident' incident.pk %}">Yakunlash</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <strong>Faol ish yo'q.</strong>
+                                <p>Yangi biriktirish bo'lsa shu yerda ko'rinadi.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="detail-grid wide-gap">
+    <article class="card elevated-card">
+        <div class="card-head">
+            <div>
+                <p class="table-kicker">Kutilayotgan yopilish</p>
+                <h2>RESOLVED holatdagilar</h2>
+            </div>
+        </div>
+        <ul class="stack-list">
+            {% for incident in resolved_incidents %}
+                <li class="stack-item">
+                    <div>
+                        <strong>#{{ incident.id }} {{ incident.title }}</strong>
+                        <p>{{ incident.address }}</p>
+                    </div>
+                    <a class="inline-link" href="{% url 'incidents:incident_detail' incident.pk %}">Ko'rish</a>
+                </li>
+            {% empty %}
+                <li class="stack-item empty-item"><div><strong>Yo'q</strong><p>RESOLVED holatdagi incident topilmadi.</p></div></li>
+            {% endfor %}
+        </ul>
+    </article>
+    <article class="card elevated-card">
+        <div class="card-head">
+            <div>
+                <p class="table-kicker">Arxiv</p>
+                <h2>Yopilgan ishlarim</h2>
+            </div>
+        </div>
+        <ul class="stack-list">
+            {% for incident in closed_incidents %}
+                <li class="stack-item">
+                    <div>
+                        <strong>#{{ incident.id }} {{ incident.title }}</strong>
+                        <p>{{ incident.address }}</p>
+                    </div>
+                    <a class="inline-link" href="{% url 'incidents:incident_detail' incident.pk %}">Ko'rish</a>
+                </li>
+            {% empty %}
+                <li class="stack-item empty-item"><div><strong>Yo'q</strong><p>Yopilgan incident topilmadi.</p></div></li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>
+
+{% if resolved_page_obj.paginator.num_pages > 1 %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if resolved_page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?resolved_page=1{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?resolved_page={{ resolved_page_obj.previous_page_number }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Resolved sahifa <strong>{{ resolved_page_obj.number }}</strong> / {{ resolved_page_obj.paginator.num_pages }}</span>
+        {% if resolved_page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?resolved_page={{ resolved_page_obj.next_page_number }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?resolved_page={{ resolved_page_obj.paginator.num_pages }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.closed_page %}&closed_page={{ request.GET.closed_page }}{% endif %}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if closed_page_obj.paginator.num_pages > 1 %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if closed_page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?closed_page=1{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?closed_page={{ closed_page_obj.previous_page_number }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Closed sahifa <strong>{{ closed_page_obj.number }}</strong> / {{ closed_page_obj.paginator.num_pages }}</span>
+        {% if closed_page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?closed_page={{ closed_page_obj.next_page_number }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?closed_page={{ closed_page_obj.paginator.num_pages }}{% if request.GET.page %}&page={{ request.GET.page }}{% endif %}{% if request.GET.resolved_page %}&resolved_page={{ request.GET.resolved_page }}{% endif %}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

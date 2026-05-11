@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-side">
+        <p class="eyebrow">Kirish</p>
+        <h1>Tizimga xavfsiz ulaning</h1>
+        <p>Rolingizga mos boshqaruv paneliga o'tish uchun login ma'lumotlaringizni kiriting.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>Fuqaro</strong><span>Incident yuborish va feedback</span></div>
+            <div class="auth-point"><strong>Operator</strong><span>Biriktirish va nazorat</span></div>
+            <div class="auth-point"><strong>Texnik</strong><span>Yakunlash va hisobot</span></div>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Hisobga kirish</p>
+        <h2>Login</h2>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn">Kirish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

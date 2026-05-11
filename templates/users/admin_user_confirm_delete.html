@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell">
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Tasdiqlanish so'ralmoqda</p>
+        <h1>Foydalanuvchini o'chirish</h1>
+        <p>Siz <strong>{{ object.get_full_name|default:object.username }}</strong> foydalanuvchisini o'chirishni xohlayapsizmi? Bu amalni bekor qilib bo'lmaydi.</p>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            <div class="actions">
+                <button type="submit" class="btn btn-dark">Ha, o'chirish</button>
+                <a href="{% url 'users:admin_profile' %}" class="btn btn-ghost">Yo'q, bekor qilish</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

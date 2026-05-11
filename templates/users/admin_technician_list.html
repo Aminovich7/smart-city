@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Admin boshqaruvi</p>
+        <h1>Texniklar ro'yxati</h1>
+        <p>Barcha ro'yxatdan o'tgan texniklar.</p>
+    </div>
+    <div class="page-hero-actions">
+        <a href="{% url 'users:admin_add_user' %}?role=technician" class="btn">Yangi texnik qo'shish</a>
+    </div>
+</section>
+
+<section class="card table-card elevated-card">
+    <div class="table-header">
+        <div>
+            <p class="table-kicker">Foydalanuvchi boshqaruvi</p>
+            <h2>Texniklar jami: {{ page_obj.paginator.count }}</h2>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ism</th>
+                    <th>Elektron pochta</th>
+                    <th>Telefon</th>
+                    <th>Mutaxassislik</th>
+                    <th>Holati</th>
+                    <th>Yuklama</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.get_full_name|default:user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone }}</td>
+                        <td>{{ user.specialization_label }}</td>
+                        <td>
+                            {% if user.is_approved %}
+                                <span class="badge badge-resolved">Tasdiqlangan</span>
+                            {% else %}
+                                <span class="badge badge-new">Kutilmoqda</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.current_workload }}</td>
+                        <td class="action-cell">
+                            <form method="post" action="{% url 'users:admin_approve_user' user.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="inline-link btn btn-ghost {% if not user.is_approved %}strong-link{% endif %}">
+                                    {% if user.is_approved %}Rad etish{% else %}Tasdiqlash{% endif %}
+                                </button>
+                            </form>
+                            <a class="inline-link" href="{% url 'users:admin_delete_user' user.pk %}">O'chirish</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state"><strong>Texnik topilmadi.</strong></div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?page=1">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.previous_page_number }}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+
+        <span class="pagination-chip">Sahifa <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Bildirishnomalar</p>
+        <h1>Sizning bildirishnomalaringiz</h1>
+        <p>So'nggi xabarnomalar va ularni boshqarish.</p>
+    </div>
+    <div class="page-hero-actions">
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost">Hammasini o'qilgan qilish</button>
+        </form>
+    </div>
+</section>
+
+<section class="card table-card elevated-card">
+    <div class="table-wrap">
+        <ul class="stack-list notifications-list">
+            {% for notification in notifications %}
+                <li class="stack-item {% if not notification.is_read %}unread{% endif %}">
+                    <div>
+                        <strong>{{ notification.get_notification_type_display }}</strong>
+                        <p>{{ notification.message }}</p>
+                        <small>{{ notification.created_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    <div class="action-cell">
+                        {% if notification.incident %}
+                            <a class="inline-link" href="{% url 'incidents:incident_detail' notification.incident.pk %}">Incidentga o`tish</a>
+                        {% endif %}
+                        {% if not notification.is_read %}
+                            <form method="post" action="{% url 'notifications:mark_read' notification.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="inline-link btn btn-ghost">O'qildi</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </li>
+            {% empty %}
+                <li class="stack-item empty-item"><div><strong>Bildirishnoma yo'q</strong><p>Hozircha hech qanday bildirishnoma topilmadi.</p></div></li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?page=1">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.previous_page_number }}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Sahifa <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

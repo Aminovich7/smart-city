@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="site-backdrop site-backdrop-one"></div>
+    <div class="site-backdrop site-backdrop-two"></div>
+
+    <div class="page-shell">
+        <header class="topbar">
+            <div class="container topbar-inner">
+                <a href="{% url 'users:home' %}" class="brand">
+                    <span class="brand-mark">SC</span>
+                    <span class="brand-copy">
+                        <strong>Smart City</strong>
+                        <small>Incident boshqaruvi</small>
+                    </span>
+                </a>
+
+                <nav class="nav">
+                    {% if user.is_authenticated %}
+                        {% if user.role == 'citizen' %}
+                            <a class="nav-link{% if request.path == '/incidents/' %} is-active{% endif %}" href="{% url 'incidents:citizen_incident_list' %}">Incidentlarim</a>
+                            <a class="nav-link{% if '/reports/citizen/' in request.path %} is-active{% endif %}" href="{% url 'reports:citizen_dashboard' %}">Statistika</a>
+                        {% elif user.role == 'operator' %}
+                            <a class="nav-link{% if '/incidents/operator/' in request.path %} is-active{% endif %}" href="{% url 'incidents:operator_incident_list' %}">Incidentlar</a>
+                            <a class="nav-link{% if '/incidents/operator/technicians/' in request.path %} is-active{% endif %}" href="{% url 'incidents:operator_technician_list' %}">Texniklar</a>
+                        {% elif user.role == 'technician' %}
+                            <a class="nav-link{% if '/incidents/technician/' in request.path %} is-active{% endif %}" href="{% url 'incidents:technician_incident_list' %}">Mening ishlarim</a>
+                            <a class="nav-link{% if '/reports/technician/' in request.path %} is-active{% endif %}" href="{% url 'reports:technician_dashboard' %}">Panel</a>
+                        {% elif user.role == 'admin' %}
+                            <a class="nav-link{% if '/reports/admin/' in request.path %} is-active{% endif %}" href="{% url 'reports:admin_system_reports' %}">Admin hisobotlari</a>
+                            <a class="nav-link{% if '/users/profile/admin/' in request.path %} is-active{% endif %}" href="{% url 'users:admin_profile' %}">Admin panel</a>
+                        {% endif %}
+                    {% else %}
+                        <a class="nav-link{% if '/users/login/' in request.path %} is-active{% endif %}" href="{% url 'users:login' %}">Kirish</a>
+                        <a class="nav-link{% if '/users/register/' in request.path %} is-active{% endif %}" href="{% url 'users:register' %}">Ro'yxatdan o'tish</a>
+                    {% endif %}
+                </nav>
+
+                <div class="topbar-actions">
+                    {% if user.is_authenticated %}
+                        <!-- ADDED: Notification link with unread badge.
+                             The variable 'unread_notification_count' comes from
+                             notifications/context_processors.py (added to TEMPLATES in settings.py). -->
+                        <a href="{% url 'notifications:notification_list' %}" class="nav-link">
+                            Bildirishnomalar
+                            {% if unread_notification_count %}
+                                <span class="badge-count">{{ unread_notification_count }}</span>
+                            {% endif %}
+                        </a>
+
+                        <!-- Profile link based on role -->
+                        {% if user.role == 'citizen' %}
+                            <a href="{% url 'users:citizen_profile' %}" class="nav-link">Profil</a>
+                        {% elif user.role == 'operator' %}
+                            <a href="{% url 'users:operator_profile' %}" class="nav-link">Profil</a>
+                        {% elif user.role == 'technician' %}
+                            <a href="{% url 'users:technician_profile' %}" class="nav-link">Profil</a>
+                        {% elif user.role == 'admin' %}
+                            <a href="{% url 'users:admin_profile' %}" class="nav-link">Profil</a>
+                        {% endif %}
+
+                        <div class="user-chip">
+                            <span class="user-chip-role">{{ user.get_role_display }}</span>
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                        </div>
+                        <form method="post" action="{% url 'users:logout' %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost">Chiqish</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="container messages-wrap">
+                {% for message in messages %}
+                    <div class="flash flash-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <main class="container main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <div class="container site-footer-inner">
+                <div>
+                    <p class="footer-title">Smart City</p>
+                    <p class="footer-copy">Shahar muammolarini aniq, kuzatiladigan va javobgar workflow bilan boshqarish tizimi.</p>
+                </div>
+                <div class="footer-meta">
+                    <span>Fuqaro</span>
+                    <span>Operator</span>
+                    <span>Texnik</span>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

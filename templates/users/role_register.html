@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-side">
+        <p class="eyebrow">{{ role_label }}</p>
+        <h1>{{ role_label }} roli uchun ro'yxatdan o'tish</h1>
+        <p>Rolga mos ma'lumotlarni to'ldiring. Shundan keyin tizim sizni kerakli boshqaruv oqimiga yo'naltiradi.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>Workflow</strong><span>Har bir rol o'z mas'uliyat zonasida ishlaydi</span></div>
+            <div class="auth-point"><strong>Status nazorati</strong><span>Barcha jarayonlar kuzatiladi</span></div>
+            <div class="auth-point"><strong>Foto isboti</strong><span>Incident va resolution suratlar bilan yuritiladi</span></div>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Yangi hisob</p>
+        <h2>Ma'lumotlarni kiriting</h2>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="hint">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">Ro'yxatdan o'tish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

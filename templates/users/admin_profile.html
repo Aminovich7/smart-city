@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Admin paneli</p>
+        <h1>{{ user.get_full_name|default:user.username }}</h1>
+        <p>Tizimni boshqarish va foydalanuvchilarni qabul qilish.</p>
+    </div>
+</section>
+
+<section class="stats-grid premium-stats">
+    <article class="stat-card stat-card-primary"><span>Jami fuqaro</span><strong>{{ total_citizens }}</strong></article>
+    <article class="stat-card"><span>Jami operator</span><strong>{{ total_operators }}</strong></article>
+    <article class="stat-card"><span>Jami texnik</span><strong>{{ total_technicians }}</strong></article>
+    <article class="stat-card"><span>Jami incident</span><strong>{{ total_incidents }}</strong></article>
+</section>
+
+<section class="detail-grid">
+    <article class="card">
+        <h2>Shaxsiy ma'lumot</h2>
+        <div class="meta-list">
+            <p><strong>Ism:</strong> {{ user.first_name }}</p>
+            <p><strong>Familiya:</strong> {{ user.last_name }}</p>
+            <p><strong>Elektron pochta:</strong> {{ user.email }}</p>
+            <p><strong>Rol:</strong> <span class="badge badge-resolved">{{ user.get_role_display }}</span></p>
+        </div>
+    </article>
+
+    <article class="card">
+        <h2>Tasdiqlanishi kutilayotgan</h2>
+        <p><strong>Tasdiqlanishi kutilayotgan foydalanuvchi:</strong> {{ pending_approvals }} ta</p>
+    </article>
+</section>
+
+<section class="detail-grid wide-gap">
+    <article class="card">
+        <h2>Foydalanuvchi boshqaruvi</h2>
+        <div class="actions">
+            <a href="{% url 'users:admin_citizen_list' %}" class="btn">Fuqarolar ro'yxati</a>
+            <a href="{% url 'users:admin_operator_list' %}" class="btn">Operatorlar ro'yxati</a>
+            <a href="{% url 'users:admin_technician_list' %}" class="btn">Texniklar ro'yxati</a>
+            <a href="{% url 'users:admin_add_user' %}?role=citizen" class="btn btn-secondary">Yangi fuqaro qo'shish</a>
+            <a href="{% url 'users:admin_add_user' %}?role=operator" class="btn btn-secondary">Yangi operator qo'shish</a>
+            <a href="{% url 'users:admin_add_user' %}?role=technician" class="btn btn-secondary">Yangi texnik qo'shish</a>
+        </div>
+    </article>
+
+    <article class="card">
+        <h2>Sistem ko'rsatkichlari</h2>
+        <div class="actions">
+            <a href="{% url 'reports:admin_system_reports' %}" class="btn">Umumiy hisobotlar</a>
+            <a href="{% url 'users:admin_edit_profile' %}" class="btn btn-secondary">Profilni tahrirlash</a>
+        </div>
+    </article>
+</section>
+{% endblock %}

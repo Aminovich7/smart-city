@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell form-shell">
+    <div class="auth-side">
+        <p class="eyebrow">Profil tahrir</p>
+        <h1>Shaxsiy ma'lumotlarni yangilash</h1>
+        <p>Ism, familiya, elektron pochta, telefon va mutaxassislikni o'zgartirishingiz mumkin.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>Xavfsizlik</strong><span>Parol o'zgartirilmaydi bu yerda</span></div>
+            <div class="auth-point"><strong>Rol</strong><span>Rol o'zgartirilmaydi</span></div>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">O'zgartirishlar</p>
+        <h2>Profilni tahrirlang</h2>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">O'zgartirishlarni saqlash</button>
+            <a href="{% url 'users:technician_profile' %}" class="btn btn-ghost">Bekor qilish</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

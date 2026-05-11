@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="form-panel">
+    <div class="card form-card elevated-card">
+        <p class="eyebrow">Texnik yakuni</p>
+        <h1>#{{ incident.id }} incidentni yakunlash</h1>
+        <form method="post" enctype="multipart/form-data" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">RESOLVED holatiga o`tkazish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

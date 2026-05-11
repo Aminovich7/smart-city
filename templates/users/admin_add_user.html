@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell form-shell">
+    <div class="auth-side">
+        <p class="eyebrow">Foydalanuvchi qo'shish</p>
+        <h1>Yangi foydalanuvchini tizimga qo'shish</h1>
+        <p>Admin sifatida yangi fuqaro, operator yoki texnikni ro'yxatdan o'tkazing.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>Rol</strong><span>{{ role }} sifatida ro'yxatdan o'tadi</span></div>
+            <div class="auth-point"><strong>Fuqaro</strong><span>Avtomatik tasdiqlangan</span></div>
+            <div class="auth-point"><strong>Boshqalar</strong><span>Sizning tasdiqlashingiz kerak</span></div>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Yangi foydalanuvchi</p>
+        <h2>Ro'yxatdan o'tkazish</h2>
+        <form method="post" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">Foydalanuvchini ro'yxatdan o'tkazish</button>
+            <a href="{% url 'users:admin_profile' %}" class="btn btn-ghost">Bekor qilish</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

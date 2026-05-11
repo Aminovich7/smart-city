@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reassign Incident #{{ incident.id }}</h2>
+<p>Citizen reported that the incident was <strong>not resolved</strong>. Reason: <em>{{ feedback.reason }}</em></p>
+<p>Click below to reopen the incident and send it back to the technician.</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Reopen Incident</button>
+    <a href="{% url 'incidents:operator_incident_detail' incident.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

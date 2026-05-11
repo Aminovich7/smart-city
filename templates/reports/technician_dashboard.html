@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Texnik statistikasi</p>
+        <h1>Ish yuklamasi va natijalar</h1>
+        <p>Faol topshiriqlar, hal qilingan va yopilgan incidentlar kesimidagi shaxsiy ko'rsatkichlar.</p>
+    </div>
+</section>
+<section class="stats-grid premium-stats">
+    <article class="stat-card stat-card-primary"><span>Faol</span><strong>{{ active_count }}</strong></article>
+    <article class="stat-card"><span>RESOLVED</span><strong>{{ resolved_count }}</strong></article>
+    <article class="stat-card"><span>Yopilgan</span><strong>{{ closed_count }}</strong></article>
+</section>
+{% endblock %}

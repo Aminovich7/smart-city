@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if not user.is_authenticated %}
+<section class="hero hero-home">
+    <div class="hero-copy">
+        <p class="eyebrow">Shahar xizmatlari uchun yagona workflow</p>
+        <h1>Incidentni yuborishdan yopilishigacha bo'lgan jarayonni professional tarzda boshqaring.</h1>
+        <p class="hero-text">
+            Platforma fuqaro, operator, texnik va admin rollarini yagona oqimga birlashtiradi.
+            Har bir bosqich status, foto, hisobot va feedback bilan nazorat qilinadi.
+        </p>
+        <div class="hero-actions">
+            <a class="btn" href="{% url 'users:register_citizen' %}">Fuqaro sifatida boshlash</a>
+            <a class="btn btn-secondary" href="{% url 'users:login' %}">Tizimga kirish</a>
+        </div>
+    </div>
+    <div class="hero-panel">
+        <div class="hero-panel-card">
+            <span class="hero-kicker">Workflow</span>
+            <strong>NEW</strong>
+            <span class="hero-arrow">-></span>
+            <strong>IN_PROGRESS</strong>
+            <span class="hero-arrow">-></span>
+            <strong>RESOLVED</strong>
+            <span class="hero-arrow">-></span>
+            <strong>CLOSED</strong>
+        </div>
+        <div class="hero-mini-grid">
+            <article class="mini-stat">
+                <span>Fuqaro</span>
+                <strong>3 ta boshlang'ich foto</strong>
+            </article>
+            <article class="mini-stat">
+                <span>Texnik</span>
+                <strong>3 ta yakuniy foto</strong>
+            </article>
+            <article class="mini-stat">
+                <span>Operator</span>
+                <strong>Qayta biriktirish</strong>
+            </article>
+            <article class="mini-stat">
+                <span>Tizim</span>
+                <strong>7 kunda auto-close</strong>
+            </article>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="feature-grid">
+    <article class="feature-card feature-card-citizen">
+        <span class="feature-index">01</span>
+        <h2>Fuqaro</h2>
+        <p>Incident yaratadi, statuslarni ko'radi, resolution bo'yicha fikr va baho qoldiradi.</p>
+    </article>
+    <article class="feature-card feature-card-operator">
+        <span class="feature-index">02</span>
+        <h2>Operator</h2>
+        <p>Bo'sh texniklarni tanlaydi, incidentlarni taqsimlaydi va qayta ochilgan ishlarni boshqaradi.</p>
+    </article>
+    <article class="feature-card feature-card-technician">
+        <span class="feature-index">03</span>
+        <h2>Texnik</h2>
+        <p>Biriktirilgan ishni bajaradi, yakuniy fotosuratlar va hisobot bilan topshiradi.</p>
+    </article>
+    <article class="feature-card feature-card-admin">
+        <span class="feature-index">04</span>
+        <h2>Admin</h2>
+        <p>Tizimdagi umumiy ko'rsatkichlar, rollar va oxirgi incidentlar bo'yicha monitoring qiladi.</p>
+    </article>
+</section>
+
+<section class="spotlight-grid">
+    <article class="card spotlight-card">
+        <p class="eyebrow">Aniq nazorat</p>
+        <h2>Har bir incident uchun yagona timeline va foto tarixi</h2>
+        <p>Barcha status o'zgarishlari, operator qarorlari va fuqaro feedbacki bir joyda jamlanadi.</p>
+    </article>
+    <article class="card spotlight-card muted-card">
+        <p class="eyebrow">Javobgarlik</p>
+        <h2>Biriktirish va yopish qarorlari iz bilan saqlanadi</h2>
+        <p>Operator, texnik va tizim bajaradigan harakatlar audit ko'rinishida tafsilot sahifasida ko'rinadi.</p>
+    </article>
+</section>
+{% endblock %}

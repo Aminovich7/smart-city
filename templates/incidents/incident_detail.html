@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section-head inline-head">
+    <div>
+        <p class="eyebrow">Incident tafsiloti</p>
+        <h1>#{{ incident.id }} {{ incident.title }}</h1>
+    </div>
+    <span class="badge badge-{{ incident.status|lower }}">{{ incident.get_status_display }}</span>
+</section>
+
+<section class="detail-grid">
+    <article class="card">
+        <h2>Asosiy ma`lumot</h2>
+        <div class="meta-list">
+            <p><strong>Kategoriya:</strong> {{ incident.get_category_display }}</p>
+            {% if incident.other_category_note %}
+                <p><strong>Kategoriya izohi:</strong> {{ incident.other_category_note }}</p>
+            {% endif %}
+            <p><strong>Muhimlik:</strong> {{ incident.get_priority_display }}</p>
+            <p><strong>Hudud:</strong> {{ incident.get_region_display }}</p>
+            <p><strong>Manzil:</strong> {{ incident.address }}</p>
+            <p><strong>Fuqaro:</strong> {{ incident.citizen }}</p>
+            <p><strong>Operator:</strong> {% if incident.operator %}{{ incident.operator }}{% else %}Belgilanmagan{% endif %}</p>
+            <p><strong>Texnik:</strong> {% if incident.technician %}{{ incident.technician }}{% if incident.technician.specialization %} / {{ incident.technician.specialization_label }}{% endif %}{% else %}Belgilanmagan{% endif %}</p>
+            <p><strong>Workflow sikli:</strong> {{ incident.workflow_round }}</p>
+        </div>
+        <p>{{ incident.description }}</p>
+    </article>
+
+    <article class="card">
+        <h2>Amallar</h2>
+        <div class="actions">
+            <!-- ADDED: Priority update form for operators – always visible so operators can adjust priority at any stage -->
+            {% if user.role == 'operator' %}
+            <form method="post" action="{% url 'incidents:update_priority' incident.pk %}" class="priority-form">
+                {% csrf_token %}
+                <select name="priority">
+                    <option value="low" {% if incident.priority == 'low' %}selected{% endif %}>Past</option>
+                    <option value="medium" {% if incident.priority == 'medium' %}selected{% endif %}>O`rta</option>
+                    <option value="high" {% if incident.priority == 'high' %}selected{% endif %}>Yuqori</option>
+                </select>
+                <button type="submit" class="btn btn-secondary">Muhimlikni yangilash</button>
+            </form>
+            {% endif %}
+
+            {% if user.role == 'citizen' and incident.status == 'RESOLVED' and not feedback %}
+                <a class="btn" href="{% url 'incidents:citizen_feedback' incident.pk %}">Fikr qoldirish</a>
+            {% endif %}
+            {% if user.role == 'operator' and incident.status == 'NEW' %}
+                <a class="btn" href="{% url 'incidents:assign_technician' incident.pk %}">Texnik biriktirish</a>
+            {% endif %}
+            {% if user.role == 'operator' and incident.status == 'RESOLVED' and feedback and not feedback.is_resolved %}
+                <a class="btn" href="{% url 'incidents:assign_technician' incident.pk %}">Qayta biriktirish</a>
+            {% endif %}
+            {% if user.role == 'operator' and incident.status == 'RESOLVED' %}
+                <a class="btn btn-secondary" href="{% url 'incidents:operator_add_photos' incident.pk %}">Qo`shimcha foto</a>
+            {% endif %}
+            {% if user.role == 'operator' and incident.status == 'RESOLVED' and feedback and feedback.is_resolved %}
+                <form method="post" action="{% url 'incidents:operator_close_incident' incident.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark">Incidentni yopish</button>
+                </form>
+            {% elif user.role == 'operator' and incident.status == 'RESOLVED' and incident.workflow_round > 1 %}
+                <form method="post" action="{% url 'incidents:operator_close_incident' incident.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark">Incidentni yopish</button>
+                </form>
+            {% endif %}
+            {% if user.role == 'technician' and incident.status == 'IN_PROGRESS' %}
+                <a class="btn" href="{% url 'incidents:resolve_incident' incident.pk %}">Yakunlash</a>
+            {% endif %}
+        </div>
+    </article>
+</section>
+
+<section class="card">
+    <h2>Foto galereya</h2>
+    <div class="photo-grid">
+        {% for photo in incident.photos.all %}
+            <figure class="photo-card">
+                <img src="{{ photo.image.url }}" alt="Incident foto">
+                <figcaption>{{ photo.get_kind_display }} / sikl {{ photo.round_number }}</figcaption>
+            </figure>
+        {% empty %}
+            <p>Hozircha foto mavjud emas.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="detail-grid">
+    <article class="card">
+        <h2>Status tarixi</h2>
+        <div class="timeline">
+            {% for update in incident.updates.all %}
+                <div class="timeline-item">
+                    <strong>{{ update.created_at|date:"d.m.Y H:i" }}</strong>
+                    <p>{{ update.from_status }} -> {{ update.to_status }}</p>
+                    <p>{{ update.note }}</p>
+                    <small>{% if update.actor %}{{ update.actor }}{% else %}Tizim{% endif %}</small>
+                </div>
+            {% empty %}
+                <p>Status tarixi hali bo`sh.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card">
+        <h2>Yakun va fikr</h2>
+        {% if resolution_report %}
+            <p><strong>Hisobot:</strong> {{ resolution_report.description }}</p>
+            <p><strong>Materiallar:</strong> {{ resolution_report.materials_used|default:"Kiritilmagan" }}</p>
+            <p><strong>Vaqt:</strong> {{ resolution_report.completed_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Sikl:</strong> {{ resolution_report.round_number }}</p>
+        {% else %}
+            <p>Yechim hisobot hali mavjud emas.</p>
+        {% endif %}
+
+        {% if feedback %}
+            <hr>
+            <p><strong>Fuqaro javobi:</strong> {% if feedback.is_resolved %}Hal bo`lgan{% else %}Hal bo`lmagan{% endif %}</p>
+            <p><strong>Reyting:</strong> {{ feedback.rating|default:"Berilmagan" }}</p>
+            {% if feedback.reason %}
+                <p><strong>Izoh:</strong> {{ feedback.reason }}</p>
+            {% endif %}
+        {% else %}
+            <p>Fuqaro fikri hali kelmagan.</p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-shell form-shell">
+    <div class="auth-side">
+        <p class="eyebrow">Yangi incident</p>
+        <h1>Muammoni to'liq tavsif bilan yuboring</h1>
+        <p>Title, manzil, kategoriya va aynan 3 ta boshlang'ich foto bilan yangi incident yaratiladi.</p>
+        <div class="auth-points">
+            <div class="auth-point"><strong>1-qadam</strong><span>Muammoni aniq yozing</span></div>
+            <div class="auth-point"><strong>2-qadam</strong><span>Hudud va manzilni kiriting</span></div>
+            <div class="auth-point"><strong>3-qadam</strong><span>3 ta foto yuklang</span></div>
+        </div>
+    </div>
+    <div class="card form-card auth-card">
+        <p class="eyebrow">Incident formasi</p>
+        <h2>Yuborish uchun tayyorlang</h2>
+        <div class="category-showcase">
+            {% for category in category_cards %}
+                <article class="category-showcase-card">
+                    <strong>{{ category.title }}</strong>
+                    <small>Texnik: {{ category.tech }}</small>
+                    <p>{{ category.desc }}</p>
+                </article>
+            {% endfor %}
+        </div>
+        <form method="post" enctype="multipart/form-data" class="stack-md">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors|join:', ' }}</div>
+            {% endif %}
+            <button type="submit" class="btn">Incident yuborish</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

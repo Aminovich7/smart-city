@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Texniklar ro'yxati</p>
+        <h1>Tasdiqlangan texniklar</h1>
+        <p>Hozirgi tasdiqlangan texniklar va ularning mutaxassisliklari hamda ish yuklamalari.</p>
+    </div>
+</section>
+
+<section class="card table-card elevated-card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ism</th>
+                    <th>Mutaxassislik</th>
+                    <th>Holati</th>
+                    <th>Joriy yuklama</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tech in technicians %}
+                    <tr>
+                        <td>{{ tech.get_full_name|default:tech.username }}</td>
+                        <td>{% if tech.specialization_label %}{{ tech.specialization_label }}{% else %}Belgilanmagan{% endif %}</td>
+                        <td><span class="badge badge-resolved">Faol</span></td>
+                        <td>{{ tech.current_workload }}</td>
+                        <td class="action-cell">
+                            <span class="badge">{{ tech.current_workload }} ta topshiriq</span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state"><strong>Texniklar topilmadi.</strong><p>Yaqin vaqtlarda texniklar ro'yxati bo'shashishi mumkin.</p></div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-ghost pagination-btn" href="?page=1">&laquo; Birinchi</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.previous_page_number }}">&lsaquo; Oldingi</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">&laquo; Birinchi</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">&lsaquo; Oldingi</span>
+        {% endif %}
+        <span class="pagination-chip">Sahifa <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
+            <a class="btn btn-ghost pagination-btn" href="?page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+        {% else %}
+            <span class="btn btn-ghost pagination-btn is-disabled">Keyingi &rsaquo;</span>
+            <span class="btn btn-ghost pagination-btn is-disabled">Oxirgi &raquo;</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

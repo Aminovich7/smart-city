@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Fuqaro statistikasi</p>
+        <h1>Mening umumiy holatim</h1>
+        <p>Incidentlar soni, faol jarayonlar va yopilgan ishlarga tezkor nazar.</p>
+    </div>
+</section>
+<section class="stats-grid premium-stats">
+    <article class="stat-card stat-card-primary"><span>Jami</span><strong>{{ total_incidents }}</strong></article>
+    <article class="stat-card"><span>Yangi</span><strong>{{ new_incidents }}</strong></article>
+    <article class="stat-card"><span>Jarayonda</span><strong>{{ in_progress_incidents }}</strong></article>
+    <article class="stat-card"><span>Hal qilingan</span><strong>{{ resolved_incidents }}</strong></article>
+    <article class="stat-card"><span>Yopilgan</span><strong>{{ closed_incidents }}</strong></article>
+</section>
+{% endblock %}

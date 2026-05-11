@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-hero compact-hero">
+    <div class="page-hero-copy">
+        <p class="eyebrow">Shaxsiy profil</p>
+        <h1>{{ user.get_full_name|default:user.username }}</h1>
+        <p>Texnik sifatida incidentlarni bajarish va taqdim etish.</p>
+    </div>
+</section>
+
+<section class="detail-grid">
+    <article class="card">
+        <h2>Shaxsiy ma'lumot</h2>
+        <div class="meta-list">
+            <p><strong>Ism:</strong> {{ user.first_name }}</p>
+            <p><strong>Familiya:</strong> {{ user.last_name }}</p>
+            <p><strong>Foydalanuvchi nomi:</strong> {{ user.username }}</p>
+            <p><strong>Elektron pochta:</strong> {{ user.email }}</p>
+            <p><strong>Telefon:</strong> {{ user.phone }}</p>
+            <p><strong>Mutaxassislik:</strong> {{ user.specialization_label }}</p>
+            <p><strong>Rol:</strong> <span class="badge badge-resolved">{{ user.get_role_display }}</span></p>
+            <p><strong>Tasdiqlanish holati:</strong> 
+                {% if user.is_approved %}
+                    <span class="badge badge-resolved">Tasdiqlangan</span>
+                {% else %}
+                    <span class="badge badge-new">Kutilmoqda</span>
+                {% endif %}
+            </p>
+            <p><strong>Joriy yuklama:</strong> {{ user.current_workload }} ta topshiriq</p>
+        </div>
+    </article>
+
+    <article class="card">
+        <h2>Statistika</h2>
+        <div class="stats-inline">
+            <div class="stat-inline">
+                <span>Faol</span>
+                <strong>{{ active_count }}</strong>
+            </div>
+            <div class="stat-inline">
+                <span>Yakunlangan</span>
+                <strong>{{ completed_count }}</strong>
+            </div>
+            {% if average_rating %}
+            <div class="stat-inline">
+                <span>Reyting</span>
+                <strong>{{ average_rating }}/5</strong>
+            </div>
+            {% endif %}
+        </div>
+    </article>
+</section>
+
+<section class="detail-grid">
+    <div class="card">
+        <a href="{% url 'users:technician_edit_profile' %}" class="btn">Profilni tahrirlash</a>
+        <a href="{% url 'incidents:technician_incident_list' %}" class="btn btn-secondary">Mening ishlarim</a>
+    </div>
+</section>
+{% endblock %}
